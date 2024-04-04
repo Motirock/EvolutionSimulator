@@ -2,6 +2,7 @@ package game;
 
 import java.awt.Graphics2D;
 import java.awt.Color;
+import java.awt.BasicStroke;
 
 public class NeuralNetwork {
     int inputSize;
@@ -65,6 +66,24 @@ public class NeuralNetwork {
         for (int i = 0; i < layerCount; i++) {
             layers[i].mutate();
         }
+
+        for (int i = 0; i < inputSize; i++) {
+            if (Math.random() < Neuron.mutationChancePartial) {
+                input[i] += (-1+2*Math.random())*Neuron.mutationRatePartial;
+            }
+            else if (Math.random() < Neuron.mutationChancePartial+Neuron.mutationChanceFull) {
+                input[i] = -1+2*Math.random();
+            }
+        }
+
+        for (int i = 0; i < outputSize; i++) {
+            if (Math.random() < Neuron.mutationChancePartial) {
+                thresholds[i] += (-1+2*Math.random())*Neuron.mutationRatePartial;
+            }
+            else if (Math.random() < Neuron.mutationChancePartial+Neuron.mutationChanceFull) {
+                thresholds[i] = -1+2*Math.random();
+            }
+        }
     }
 
     public void feedForward() {
@@ -81,14 +100,15 @@ public class NeuralNetwork {
     double neuronDiameter = 100;
     double neuronRadius = neuronDiameter/2.0;
     double verticalGap = 150;
-    double horizontalGap = 250;
+    double horizontalGap = 175;
     double leftEdge = 800;
-    public void draw(Graphics2D g2, double GS) {
+    public void draw(Graphics2D g2, double GS, int x, int y) {
+        leftEdge = x;
         for (int i = 0; i < inputSize; i++) {
             g2.setColor(new Color((int) (Utils.sigmoid(input[i])*255), (int) (Utils.sigmoid(input[i])*255), (int) (Utils.sigmoid(input[i])*255)));
             g2.fillOval(
                 (int) ((leftEdge-neuronDiameter/2.0)*GS), 
-                (int) ((450-(input.length-1)*(verticalGap/2.0) + (verticalGap)*i-neuronDiameter/2.0)*GS), 
+                (int) ((y-(input.length-1)*(verticalGap/2.0) + (verticalGap)*i-neuronDiameter/2.0)*GS), 
                 (int) ((neuronDiameter)*GS), 
                 (int) ((neuronDiameter)*GS)
             );
@@ -102,7 +122,7 @@ public class NeuralNetwork {
                 g2.setColor(new Color((int) (Utils.sigmoid(inputs[j])*255), (int) (Utils.sigmoid(inputs[j])*255), (int) (Utils.sigmoid(inputs[j])*255)));
                 g2.fillOval(
                     (int) ((leftEdge+horizontalGap*(i+1)-neuronDiameter/2.0)*GS), 
-                    (int) ((450-(layers[i].neurons.length-1)*verticalGap/2.0 + (verticalGap)*j-neuronDiameter/2.0)*GS), 
+                    (int) ((y-(layers[i].neurons.length-1)*verticalGap/2.0 + (verticalGap)*j-neuronDiameter/2.0)*GS), 
                     (int) ((neuronDiameter)*GS), 
                     (int) ((neuronDiameter)*GS)
                 );
@@ -119,27 +139,58 @@ public class NeuralNetwork {
             
             for (int j = 0; j < layers[i].neurons.length; j++) {
                 for (int k = 0; k < inputCopy.length; k++) {
-                    g2.setColor(new Color((int) (inputCopy[k]*255), (int) (inputCopy[k]*255), (int) (inputCopy[k]*255)));
+                    g2.setColor(new Color((int) (255-inputCopy[k]*255), (int) (inputCopy[k]*255), 0));
+                    g2.setStroke(new BasicStroke((float) (Math.abs(layers[i].neurons[j].weights[k])*10)));
                     if (i == 0) {
                         g2.drawLine(
                             (int) ((leftEdge+horizontalGap*i)*GS), 
-                            (int) ((450-(inputSize-1)*verticalGap/2.0 + (verticalGap)*k)*GS), 
+                            (int) ((y-(inputSize-1)*verticalGap/2.0 + (verticalGap)*k)*GS), 
                             (int) ((leftEdge+horizontalGap*(i+1))*GS), 
-                            (int) ((450-(layers[i].neurons.length-1)*verticalGap/2.0 + (verticalGap)*j)*GS)
+                            (int) ((y-(layers[i].neurons.length-1)*verticalGap/2.0 + (verticalGap)*j)*GS)
                         );
                     }
                     else {
                         g2.drawLine(
                             (int) ((leftEdge+horizontalGap*i)*GS), 
-                            (int) ((450-(layers[i-1].neurons.length-1)*verticalGap/2.0 + (verticalGap)*k)*GS), 
+                            (int) ((y-(layers[i-1].neurons.length-1)*verticalGap/2.0 + (verticalGap)*k)*GS), 
                             (int) ((leftEdge+horizontalGap*(i+1))*GS), 
-                            (int) ((450-(layers[i].neurons.length-1)*verticalGap/2.0 + (verticalGap)*j)*GS)
+                            (int) ((y-(layers[i].neurons.length-1)*verticalGap/2.0 + (verticalGap)*j)*GS)
                         );
                     }
                 }
             }
         }
+    }
 
+    public NeuralNetwork clone() {
+        NeuralNetwork nn = new NeuralNetwork(inputSize, outputSize, layerSizes);
+        for (int i = 0; i < layerCount; i++) {
+            nn.layers[i] = layers[i].clone();
+        }
+        for (int i = 0; i < inputSize; i++) {
+            nn.input[i] = input[i];
+        }
+        for (int i = 0; i < outputSize; i++) {
+            nn.thresholds[i] = thresholds[i];
+        }
+        return nn;
+    }
 
+    public NeuralNetwork crossover(NeuralNetwork nn) {
+        NeuralNetwork child = new NeuralNetwork(nn);
+        for (int i = 0; i < layerCount; i++) {
+            child.layers[i] = layers[i].crossover(nn.layers[i]);
+        }
+        for (int i = 0; i < inputSize; i++) {
+            if (Math.random() < 0.5) {
+                child.input[i] = input[i];
+            }
+        }
+        for (int i = 0; i < outputSize; i++) {
+            if (Math.random() < 0.5) {
+                child.thresholds[i] = thresholds[i];
+            }
+        }
+        return child;
     }
 }

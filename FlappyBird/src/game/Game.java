@@ -13,6 +13,8 @@ public class Game {
 
     private GamePanel gp;
 
+    final int maxBirds = 100;
+
     NeuralNetwork nn;
 
     ArrayList<Bird> birds = new ArrayList<Bird>();
@@ -27,21 +29,49 @@ public class Game {
 
         //nn = new NeuralNetwork(inputSize, outputSize, layerSizes);
 
-        for (int i = 0; i < 1000; i++) {
-            birds.add(new Bird(new NeuralNetwork(inputSize, outputSize, layerSizes)));
-        }
-
         for (int i = 0; i < 10; i++) {
-            pipePairs.add(new PipePair(200+i*PipePair.pipePairSpacing, Math.random()*600+150, 50, Math.random()*(PipePair.maxGapHeight-PipePair.minGapHeight)+PipePair.minGapHeight));
+            pipePairs.add(new PipePair(400+i*PipePair.pipePairSpacing, Math.random()*600+150, Math.random()*(PipePair.maxGapHeight-PipePair.minGapHeight)+PipePair.minGapHeight));
+        }
+        Bird.startingY = pipePairs.get(0).gapY;
+
+        for (int i = 0; i < maxBirds; i++) {
+            birds.add(new Bird(new NeuralNetwork(inputSize, outputSize, layerSizes)));
         }
     }
 
+    Bird parent1 = new Bird(new NeuralNetwork(inputSize, outputSize, layerSizes));
+    Bird parent2 = new Bird(new NeuralNetwork(inputSize, outputSize, layerSizes));
     public void update() {
         updates++;
 
         //nn.input[0] = (updates%100-50)/20.0;        
 
         //nn.feedForward();
+
+        if (birds.size() == 0) {
+            pipePairs.clear();
+            for (int i = 0; i < 10; i++) {
+                pipePairs.add(new PipePair(400+i*PipePair.pipePairSpacing, Math.random()*600+150, Math.random()*(PipePair.maxGapHeight-PipePair.minGapHeight)+PipePair.minGapHeight));
+            }
+            Bird.startingY = pipePairs.get(0).gapY;
+
+            System.out.println("Best time alive: "+parent1.timeAlive);
+            parent1.timeAlive = 0;
+            parent2.timeAlive = 0;
+            birds.add(parent1);
+            birds.add(parent2);
+            birds.add(new Bird(parent1.brain.crossover(parent2.brain)));
+            for (int i = 0; i < maxBirds-3; i++) {
+                NeuralNetwork brain; 
+                if (Math.random() < 0.95) {
+                    brain = parent1.brain.crossover(parent2.brain);
+                    brain.mutate();
+                }
+                else
+                    brain = new NeuralNetwork(inputSize, outputSize, layerSizes);
+                birds.add(new Bird(brain));
+            }
+        }
 
         ArrayList<Integer> deadPipePairIndices = new ArrayList<Integer>();
         for (PipePair pipePair : pipePairs) {
@@ -53,7 +83,7 @@ public class Game {
 
         for (int i = deadPipePairIndices.size()-1; i >= 0; i--) {
             pipePairs.remove((int)deadPipePairIndices.get(i));
-            pipePairs.add(new PipePair(pipePairs.get(pipePairs.size()-1).x+PipePair.pipePairSpacing, Math.random()*600+150, 50, Math.random()*(PipePair.maxGapHeight-PipePair.minGapHeight)+PipePair.minGapHeight));
+            pipePairs.add(new PipePair(pipePairs.get(pipePairs.size()-1).x+PipePair.pipePairSpacing, Math.random()*600+150, Math.random()*(PipePair.maxGapHeight-PipePair.minGapHeight)+PipePair.minGapHeight));
         }
 
         PipePair nextPipePair = pipePairs.get(0);
@@ -73,17 +103,25 @@ public class Game {
             }
         }
 
+
         for (int i = deadBirdsIndices.size()-1; i >= 0; i--) {
-            birds.remove((int)deadBirdsIndices.get(i));
-            if (Math.random() > 1) {
-                birds.add(new Bird(new NeuralNetwork(birds.get(0).brain)));
-                birds.get(birds.size()-1).brain.mutate();
+            if (birds.get(i).timeAlive > parent1.timeAlive) {
+                parent2 = parent1;
+                parent1 = birds.get(i);
             }
-            else
-                birds.add(new Bird(new NeuralNetwork(inputSize, outputSize, layerSizes)));
+            else if (birds.get(i).timeAlive > parent2.timeAlive) {
+                parent2 = birds.get(i);
+            }
+            birds.remove((int)deadBirdsIndices.get(i));
         }
 
-        System.out.println(birds.get(0).timeAlive);
+        // System.out.println(birds.get(0).timeAlive);
+        // double averageTimeAlive = 0;
+        // for (int i = 0; i < birds.size(); i++) {
+        //     averageTimeAlive += birds.get(i).timeAlive;
+        // }
+        // averageTimeAlive /= birds.size();
+        // System.out.println(averageTimeAlive+"\n");
     }
 
     public void draw(Graphics2D g2, double GS) {
@@ -94,12 +132,15 @@ public class Game {
             pipe.draw(g2, GS);
         }
 
-        for (int i = 0; i < 1; i++) {
+        for (int i = 0; i < 100 && i < birds.size(); i++) {
             Bird bird = birds.get(i);
             bird.draw(g2, GS);
         }
 
-        birds.get(0).brain.draw(g2, GS);
+        if (birds.size() > 0)
+            birds.get(0).brain.draw(g2, GS, 300, 450);
+        if (birds.size() > 1)
+            birds.get(1).brain.draw(g2, GS, 1000, 450);
 
         
 

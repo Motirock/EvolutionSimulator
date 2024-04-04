@@ -25,4 +25,20 @@ public class Layer {
             neurons[i].mutate();
         }
     }
+
+    public Layer clone() {
+        Layer l = new Layer(numNeurons, neurons[0].numInputs);
+        for (int i = 0; i < numNeurons; i++) {
+            l.neurons[i] = neurons[i].clone();
+        }
+        return l;
+    }
+
+    public Layer crossover(Layer l) {
+        Layer child = new Layer(numNeurons, neurons[0].numInputs);
+        for (int i = 0; i < numNeurons; i++) {
+            child.neurons[i] = neurons[i].crossover(l.neurons[i]);
+        }
+        return child;
+    }
 }

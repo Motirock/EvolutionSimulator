@@ -6,6 +6,7 @@ import java.awt.Color;
 public class Bird {
     NeuralNetwork brain;
     final static double x = 100;
+    static double startingY = 450;
     double y;
     double vy;
     final static double gravity = 0.1;
@@ -14,7 +15,7 @@ public class Bird {
 
     public Bird(NeuralNetwork brain) {
         this.brain = brain;
-        y = 450;
+        y = startingY;
         vy = 0;
     }
 
@@ -24,7 +25,6 @@ public class Bird {
 
     public void update(PipePair nextPipePair) {
         this.vy += gravity;
-        this.y += vy;
 
         brain.input[0] = (nextPipePair.x-x)/300;
         brain.input[1] = (nextPipePair.gapY-y)/300;
@@ -33,6 +33,8 @@ public class Bird {
         if (brain.output[0] > brain.thresholds[0]) {
             jump();
         }
+
+        this.y += vy;
 
         timeAlive++;
     }

@@ -6,20 +6,19 @@ import java.awt.Color;
 public class PipePair {
     double x;
     double gapY;
-    double width;
+    static double width = 50;
     double gapHeight;
-    static double minGapHeight = 100, maxGapHeight = 300;
-    static double pipePairSpacing = 200;
+    static double minGapHeight = 150, maxGapHeight = 150;
+    static double pipePairSpacing = 300;
 
-    public PipePair(double x, double gapY, double width, double gapHeight) {
+    public PipePair(double x, double gapY, double gapHeight) {
         this.x = x;
         this.gapY = gapY;
-        this.width = width;
         this.gapHeight = gapHeight;
     }
 
     public void update() {
-        x--;
+        x -= 2;
     }
 
     public void draw(Graphics2D g2, double GS) {
